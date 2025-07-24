@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Dynasties: A Royal Chronicle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+
+        body {
+            background: url('https://www.transparenttextures.com/patterns/old-wall.png'), linear-gradient(135deg, #f4e8c1 0%, #e6d3a3 100%);
+            color: #4a2c0b;
+            font-family: 'Playfair Display', serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: linear-gradient(to bottom, #8b1e1e, #6b1515);
+            color: #d4a017;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            border-bottom: 5px solid #d4a017;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        .dynasty-section {
+            background: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            border: 3px solid #d4a017;
+            border-radius: 10px;
+            margin: 2rem 0;
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-in;
+        }
+
+        .dynasty-section h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2rem;
+            color: #8b1e1e;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #d4a017;
+            padding-bottom: 0.5rem;
+        }
+
+        .article-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .article-card {
+            background: #fff8e1;
+            border: 4px solid #d4a017;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .article-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .article-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(212, 160, 23, 0.7);
+        }
+
+        .article-card:hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(212, 160, 23, 0.2);
+            animation: glow 1s ease-in-out infinite;
+        }
+
+        .article-info {
+            padding: 1rem;
+            text-align: center;
+            background: linear-gradient(to bottom, #f4e8c1, #e6d3a3);
+        }
+
+        .article-info h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            color: #4a2c0b;
+        }
+
+        .article-info p {
+            font-size: 0.9rem;
+            color: #6b1515;
+        }
+
+        .timeline {
+            margin: 3rem 0;
+            padding: 2rem;
+            background: rgba(255, 248, 225, 0.8);
+            border: 2px solid #d4a017;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .timeline h2 {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .timeline-slider {
+            display: flex;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 1rem;
+        }
+
+        .timeline-item {
+            flex: 0 0 200px;
+            margin-right: 1rem;
+            text-align: center;
+            padding: 1rem;
+            background: #fff8e1;
+            border: 2px solid #8b1e1e;
+            border-radius: 8px;
+        }
+
+        .map-container {
+            margin: 3rem 0;
+            padding: 2rem;
+            background: rgba(255, 248, 225, 0.8);
+            border: 2px solid #d4a017;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .map-container img {
+            max-width: 100%;
+            border: 3px solid #8b1e1e;
+            border-radius: 8px;
+        }
+
+        .background-audio {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .background-audio audio {
+            opacity: 0.8;
+        }
+
+        .background-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .background-elements img {
+            position: absolute;
+        }
+
+        .seal {
+            top: 10%;
+            left: 5%;
+            width: 100px;
+        }
+
+        .carving {
+            bottom: 10%;
+            right: 5%;
+            width: 150px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes glow {
+            0% { opacity: 0.2; }
+            50% { opacity: 0.5; }
+            100% { opacity: 0.2; }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .dynasty-section h2 {
+                font-size: 1.8rem;
+            }
+
+            .article-card img {
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Indian Dynasties: A Royal Chronicle</h1>
+    </header>
+
+    <div class="container">
+        <div class="dynasty-section" id="maurya">
+            <h2>Maurya Dynasty</h2>
+            <div class="article-gallery">
+                <div class="article-card">
+                    <img src="https://via.placeholder.com/300x200?text=Maurya+Art" alt="Maurya Article">
+                    <div class="article-info">
+                        <h3>Mauryan Art</h3>
+                        <p>Origin: Pataliputra</p>
+                    </div>
+                </div>
+                <div class="article-card">
+                    <img src="https://via.placeholder.com/300x200?text=Ashoka+Edicts" alt="Ashoka Edicts">
+                    <div class="article-info">
+                        <h3>Ashoka's Edicts</h3>
+                        <p>Origin: Sarnath</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dynasty-section" id="gupta">
+            <h2>Gupta Dynasty</h2>
+            <div class="article-gallery">
+                <div class="article-card">
+                    <img src="https://via.placeholder.com/300x200?text=Gupta+Coinage" alt="Gupta Coinage">
+                    <div class="article-info">
+                        <h3>Gupta Coinage</h3>
+                        <p>Origin: Mathura</p>
+                    </div>
+                </div>
+                <div class="article-card">
+                    <img src="https://via.placeholder.com/300x200?text=Ajanta+Caves" alt="Ajanta Caves">
+                    <div class="article-info">
+                        <h3>Ajanta Caves</h3>
+                        <p>Origin: Aurangabad</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline">
+            <h2>Dynastic Timeline</h2>
+            <div class="timeline-slider">
+                <div class="timeline-item">Maurya (322–185 BCE)</div>
+                <div class="timeline-item">Gupta (320–550 CE)</div>
+                <div class="timeline-item">Chola (300 BCE–1279 CE)</div>
+                <div class="timeline-item">Mughal (1526–1857 CE)</div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <h2>Origins of Articles</h2>
+            <img src="https://via.placeholder.com/600x400?text=Ancient+India+Map" alt="Map of Ancient India">
+        </div>
+    </div>
+
+    <div class="background-audio">
+        <audio controls muted>
+            <source src="https://www.royaltyfree-music.com/audio/indian_sitar.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+
+    <div class="background-elements">
+        <img src="https://via.placeholder.com/100?text=Seal" alt="Royal Seal" class="seal">
+        <img src="https://via.placeholder.com/150?text=Carving" alt="Temple Carving" class="carving">
+    </div>
+
+    <script>
+        // Smooth scroll for dynasty sections
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Animate timeline scroll
+        const slider = document.querySelector('.timeline-slider');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+
+        slider.addEventListener('mouseleave', () => {
+            isDown = false;
+        });
+
+        slider.addEventListener('mouseup', () => {
+            isDown = false;
+        });
+
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 2;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chola Dynasty Legacy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: 'Cinzel', serif;
+      background: linear-gradient(to bottom, #1a1a1a, #4b2e2e);
+      color: #f0e68c;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #themeToggle {
+      position: fixed;
+      top: 20px;
+      right: 30px;
+      z-index: 1000;
+      font-family: 'Cinzel', serif;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 1em;
+      background: #2e2e2e;
+      color: #f0e68c;
+      border: none;
+    }
+    .typing-container {
+      text-align: center;
+      margin: 50px 0;
+    }
+    .typing-text {
+      font-size: 3em;
+      font-weight: bold;
+      border-right: 4px solid #f0e68c;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 0;
+      animation: typing 4s steps(30, end) forwards, blink 0.5s step-end infinite;
+    }
+    .typing-subtext {
+      font-size: 1.5em;
+      margin-top: 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 0;
+      animation: typingSub 6s steps(60, end) forwards 4s, blink 0.5s step-end infinite;
+    }
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    @keyframes typingSub {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+
+    .audio-player {
+      text-align: center;
+      margin: 30px 0;
+      background: #2e2e2e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    .audio-player button {
+      background: #b8860b;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+    }
+    .audio-player button:hover {
+      background: #d4a017;
+    }
+
+    h2.map-heading, h2.view-heading {
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      color: #f0e68c;
+      font-size: 2em;
+      margin-top: 40px;
+    }
+
+    #map {
+      height: 500px;
+      width: 100%;
+      margin: 30px 0;
+      border: 2px solid #f0e68c;
+      border-radius: 10px;
+    }
+
+    .slider-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      overflow: hidden;
+      margin: 50px 0;
+    }
+    .slider {
+      display: flex;
+      transition: transform 0.5s ease-in-out;
+    }
+    .card {
+      min-width: 100%;
+      text-align: center;
+      padding: 20px;
+      background: #2e2e2e;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    .card img {
+      width: 300px;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 10px;
+      transition: transform 0.8s;
+    }
+    .card img:hover {
+      transform: rotateY(180deg);
+    }
+    .card h3 {
+      font-size: 2em;
+      margin: 10px 0;
+    }
+    .card p {
+      font-size: 1.2em;
+    }
+    .card button.explore-btn {
+      background: #b8860b;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+    }
+    .card button.explore-btn:hover {
+      background: #d4a017;
+    }
+    .slider-controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .slider-controls button {
+      background: #b8860b;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 0 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+    }
+    .slider-controls button:hover {
+      background: #d4a017;
+    }
+
+    .street-view {
+      display: flex;
+      justify-content: center;
+      margin: 40px 0;
+    }
+    .street-view iframe {
+      width: 100%;
+      max-width: 1000px;
+      height: 500px;
+      border: 3px solid #f0e68c;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+    }
+    body.light-mode {
+      background: #f9f9f9;
+      color: #1a1a1a;
+    }
+    body.light-mode .audio-player,
+    body.light-mode .card {
+      background: #ffffff;
+      color: #000;
+    }
+    body.light-mode #map,
+    body.light-mode iframe {
+      border-color: #000;
+    }
+    body.light-mode #themeToggle {
+      background: #ddd;
+      color: #000;
+    }
+    body.sepia-mode {
+      background: #f4ecd8;
+      color: #5b4636;
+    }
+    body.sepia-mode .audio-player,
+    body.sepia-mode .card {
+      background: #fff8e1;
+      color: #4b3b2a;
+      box-shadow: 0 0 10px rgba(100, 60, 30, 0.2);
+    }
+    body.sepia-mode #map,
+    body.sepia-mode iframe {
+      border-color: #a47551;
+    }
+    body.sepia-mode #themeToggle {
+      background: #e0d2b3;
+      color: #5b4636;
+    }
+  </style>
+</head>
+<body>
+  <select id="themeToggle" onchange="toggleTheme()">
+    <option value="dark" selected>🌙 Dark</option>
+    <option value="light">☀️ Light</option>
+    <option value="sepia">📜 Sepia</option>
+  </select>
+  <div class="container">
+    <div class="typing-container">
+      <div class="typing-text">The Mighty Chola Dynasty</div>
+      <div class="typing-subtext">A Legacy of Art, Architecture, and Conquest in Tamil Nadu</div>
+    </div>
+    <div class="audio-player">
+      <button onclick="playLegacyNarration()">🎙️ Play Chola Legacy Narration</button>
+      <button onclick="pauseLegacyNarration()">⏸️ Pause Narration</button>
+      <button onclick="stopLegacyNarration()">🛑 Stop Narration</button>
+    </div>
+    <h2 class="map-heading">🛕 Famous Architecture During Chola Dynasty 🛕</h2>
+    <div id="map"></div>
+    <div class="slider-container">
+      <div class="slider" id="slider">
+        <div class="card">
+          <img src="images/vijayalaya.jpeg" alt="Vijayalaya Chola" onclick="playKingAudio(0)">
+          <h3>Vijayalaya Chola (848–871 CE)</h3>
+          <p>Founder of the Chola Dynasty, conquered Thanjavur. Built Vijayalaya Choleeswaram Temple.</p>
+          <button class="explore-btn" onclick="window.location.href='king.html?king=vijayalaya'">Explore</button>
+        </div>
+        <div class="card">
+          <img src="images/adity.jpg" alt="Aditya I" onclick="playKingAudio(1)">
+          <h3>Aditya I (871–907 CE)</h3>
+          <p>Defeated Pallavas, expanded Chola territory. Built temples like Kanyakumari Temple.</p>
+          <button class="explore-btn" onclick="window.location.href='king.html?king=aditya'">Explore</button>
+        </div>
+        <div class="card">
+          <img src="images/parantaka.jpg" alt="Parantaka I" onclick="playKingAudio(2)">
+          <h3>Parantaka I (907–955 CE)</h3>
+          <p>Known for conquests and patronage of arts. Built the Koranganatha Temple.</p>
+          <button class="explore-btn" onclick="window.location.href='king.html?king=parantaka'">Explore</button>
+        </div>
+        <div class="card">
+          <img src="images/rajaraja.jpg" alt="Rajaraja I" onclick="playKingAudio(3)">
+          <h3>Rajaraja I (985–1014 CE)</h3>
+          <p>Built the Brihadisvara Temple at Thanjavur, a UNESCO World Heritage Site.</p>
+          <button class="explore-btn" onclick="window.location.href='king.html?king=rajaraja'">Explore</button>
+        </div>
+        <div class="card">
+          <img src="images/raj.jpg" alt="Rajendra I" onclick="playKingAudio(4)">
+          <h3>Rajendra I (1012–1044 CE)</h3>
+          <p>Expanded empire to Southeast Asia. Built Gangaikonda Cholapuram Temple.</p>
+          <button class="explore-btn" onclick="window.location.href='king.html?king=rajendra'">Explore</button>
+        </div>
+        <div class="card">
+          <img src="images/r2.jpg" alt="Rajaraja II" onclick="playKingAudio(5)">
+          <h3>Rajaraja II (1146–1173 CE)</h3>
+          <p>Built Airavatesvara Temple at Darasuram, known for intricate carvings.</p>
+          <button class="explore-btn" onclick="window.location.href='king.html?king=rajaraja2'">Explore</button>
+        </div>
+      </div>
+      <div class="slider-controls">
+        <button onclick="prevSlide()">Previous</button>
+        <button onclick="nextSlide()">Next</button>
+      </div>
+    </div>
+    <h2 class="view-heading">🌏 360° View: Brihadeeswarar Temple, Thanjavur</h2>
+    <div class="street-view">
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!4v1719933283121!6m8!1m7!1sCAoSLEFGMVFpcE1PRTJQeG1Ja0l6eXc0Ykdfb3ZvbURjVXQ2VmNhaWZQTEVpMjN3!2m2!1d10.7831!2d79.1318!3f0!4f0!5f0.7820865974627469"
+        allowfullscreen
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+  </div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([10.91, 78.69], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data © OpenStreetMap contributors'
+    }).addTo(map);
+    const sites = [
+      { name: "Brihadeeswarar Temple, Thanjavur", coords: [10.7844, 79.1378], img: "images/brideshwar.jpg" },
+      { name: "Gangaikonda Cholapuram Temple", coords: [11.1997, 79.4766], img: "images/ganga.jpg" },
+      { name: "Airavatesvara Temple, Darasuram", coords: [10.9631, 79.3647], img: "images/dai.webp" },
+      { name: "Koranganatha Temple, Srinivasanallur", coords: [11.0422, 78.4406], img: "images/sir.jpg" },
+      { name: "Nageswaraswamy Temple, Kumbakonam", coords: [10.9645, 79.3889], img: "images/nag.jpg.webp" },
+      { name: "Kampaheswarar Temple, Thirubuvanam", coords: [11.0179, 79.5306], img: "images/kam.jpeg" },
+      { name: "Valisvara Temple, Thiruvaiyaru", coords: [10.8807, 79.1015], img: "images/valisvara.jpg" },
+      { name: "Siva Temple, Panangudi", coords: [10.1933, 78.9247], img: "images/siva.jpg" },
+      { name: "Moovar Koil, Kodumbalur", coords: [10.4922, 78.4806], img: "images/moov.jpeg" },
+      { name: "Vijayalaya Choleeswaram, Narthamalai", coords: [10.4941, 78.6358], img: "images/vvv.jpg" }
+    ];
+
+    sites.forEach(site => {
+      const popup = `
+        <div style="text-align:center;">
+          <h3>${site.name}</h3>
+          <img src="${site.img}" alt="${site.name}" style="width:200px;border-radius:10px;box-shadow:0 0 6px #000;">
+        </div>`;
+      L.marker(site.coords).addTo(map).bindPopup(popup);
+    });
+
+    // Audio Narration
+    const legacyAudio = new Audio('audio/chola-legacy.mp3');
+    function playLegacyNarration() {
+      legacyAudio.play();
+    }
+    function pauseLegacyNarration() {
+      legacyAudio.pause();
+    }
+    function stopLegacyNarration() {
+      legacyAudio.pause();
+      legacyAudio.currentTime = 0;
+    }
+
+    // King Audio Files
+    const kingAudios = [
+      new Audio('audio/vijayalaya.mp3'),
+      new Audio('audio/aditya.mp3'),
+      new Audio('audio/parantaka.mp3'),
+      new Audio('audio/rajaraja.mp3'),
+      new Audio('audio/rajendra.mp3'),
+      new Audio('audio/rajaraja1.mp3')
+    ];
+
+    function playKingAudio(index) {
+      kingAudios.forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      kingAudios[index].play();
+    }
+
+    // Slider Controls
+    let currentIndex = 0;
+    function updateSlider() {
+      document.getElementById('slider').style.transform = `translateX(-${currentIndex * 100}%)`;
+    }
+    function prevSlide() {
+      if (currentIndex > 0) currentIndex--;
+      updateSlider();
+    }
+    function nextSlide() {
+      const slider = document.getElementById('slider');
+      if (currentIndex < slider.children.length - 1) currentIndex++;
+      updateSlider();
+    }
+    function toggleTheme() {
+      const theme = document.getElementById('themeToggle').value;
+      document.body.className = ''; 
+      if (theme === 'light') document.body.classList.add('light-mode');
+      else if (theme === 'sepia') document.body.classList.add('sepia-mode');
+    }
+  </script>
+</body>
+</html>

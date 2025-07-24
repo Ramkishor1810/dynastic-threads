@@ -1,0 +1,12 @@
+.vscode
+*.pdf
+*.md
+*.zip
+*.mov
+*.mp4
+*.mp3
+*.webp
+*.jpeg
+*.jpg
+*.png
+*.DS_Store

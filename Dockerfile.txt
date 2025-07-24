@@ -1,0 +1,8 @@
+# Use NGINX web server
+FROM nginxalpine
+
+# Copy everything into the default NGINX public directory
+COPY . usrsharenginxhtml
+
+# Expose port 80 (default for NGINX)
+EXPOSE 80

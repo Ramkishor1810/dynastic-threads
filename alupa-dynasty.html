@@ -1,0 +1,404 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Alupa Dynasty Legacy</title>
+ <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+ <style>
+ body {
+ font-family: 'Cinzel', serif;
+ background: linear-gradient(to bottom, #1a1a1a, #4b2e2e);
+ color: #f0e68c;
+ margin: 0;
+ padding: 0;
+ overflow-x: hidden;
+ }
+ .container {
+ max-width: 1200px;
+ margin: 0 auto;
+ padding: 20px;
+ }
+ 
+ #themeToggle {
+ position: fixed;
+ top: 20px;
+ right: 30px;
+ z-index: 1000;
+ font-family: 'Cinzel', serif;
+ padding: 6px 12px;
+ border-radius: 8px;
+ font-size: 1em;
+ background: #2e2e2e;
+ color: #f0e68c;
+ border: none;
+ }
+
+ .typing-container {
+ text-align: center;
+ margin: 50px 0;
+ }
+ .typing-text {
+ font-size: 3em;
+ font-weight: bold;
+ border-right: 4px solid #f0e68c;
+ white-space: nowrap;
+ overflow: hidden;
+ width: 0;
+ animation: typing 4s steps(30, end) forwards, blink 0.5s step-end infinite;
+ }
+ .typing-subtext {
+ font-size: 1.5em;
+ margin-top: 20px;
+ white-space: nowrap;
+ overflow: hidden;
+ width: 0;
+ animation: typingSub 6s steps(60, end) forwards 4s, blink 0.5s step-end infinite;
+ }
+ @keyframes typing {
+ from { width: 0; }
+ to { width: 100%; }
+ }
+ @keyframes typingSub {
+ from { width: 0; }
+ to { width: 100%; }
+ }
+ @keyframes blink {
+ 50% { border-color: transparent; }
+ }
+
+ .audio-player {
+ text-align: center;
+ margin: 30px 0;
+ background: #2e2e2e;
+ padding: 20px;
+ border-radius: 10px;
+ box-shadow: 0 0 10px rgba(0,0,0,0.5);
+ }
+ .audio-player button {
+ background: #b8860b;
+ color: #fff;
+ border: none;
+ padding: 10px 20px;
+ margin: 10px;
+ border-radius: 5px;
+ cursor: pointer;
+ font-family: 'Cinzel', serif;
+ }
+ .audio-player button:hover {
+ background: #d4a017;
+ }
+
+ h2.map-heading, h2.view-heading {
+ text-align: center;
+ font-family: 'Cinzel', serif;
+ color: #f0e68c;
+ font-size: 2em;
+ margin-top: 40px;
+ }
+
+ #map {
+ height: 500px;
+ width: 100%;
+ margin: 30px 0;
+ border: 2px solid #f0e68c;
+ border-radius: 10px;
+ }
+
+ .slider-container {
+ position: relative;
+ width: 100%;
+ height: 600px;
+ overflow: hidden;
+ margin: 50px 0;
+ }
+ .slider {
+ display: flex;
+ transition: transform 0.5s ease-in-out;
+ }
+ .card {
+ min-width: 100%;
+ text-align: center;
+ padding: 20px;
+ background: #2e2e2e;
+ border-radius: 10px;
+ box-shadow: 0 0 10px rgba(0,0,0,0.5);
+ }
+ .card img {
+ width: 300px;
+ height: 300px;
+ object-fit: cover;
+ border-radius: 10px;
+ transition: transform 0.8s;
+ }
+ .card img:hover {
+ transform: rotateY(180deg);
+ }
+ .card h3 {
+ font-size: 2em;
+ margin: 10px 0;
+ }
+ .card p {
+ font-size: 1.2em;
+ }
+ .slider-controls {
+ text-align: center;
+ margin-top: 20px;
+ }
+ .slider-controls button {
+ background: #b8860b;
+ color: #fff;
+ border: none;
+ padding: 10px 20px;
+ margin: 0 10px;
+ border-radius: 5px;
+ cursor: pointer;
+ font-family: 'Cinzel', serif;
+ }
+ .slider-controls button:hover {
+ background: #d4a017;
+ }
+
+ .street-view {
+ display: flex;
+ justify-content: center;
+ margin: 40px 0;
+ }
+ .street-view iframe {
+ width: 100%;
+ max-width: 1000px;
+ height: 500px;
+ border: 3px solid #f0e68c;
+ border-radius: 10px;
+ box-shadow: 0 0 10px rgba(0,0,0,0.6);
+ }
+
+ /* 🌞 LIGHT MODE */
+ body.light-mode {
+ background: #f9f9f9;
+ color: #1a1a1a;
+ }
+ body.light-mode .audio-player,
+ body.light-mode .card {
+ background: #ffffff;
+ color: #000;
+ }
+ body.light-mode #map,
+ body.light-mode iframe {
+ border-color: #000;
+ }
+ body.light-mode #themeToggle {
+ background: #ddd;
+ color: #000;
+ }
+
+ /* 📜 SEPIA MODE */
+ body.sepia-mode {
+ background: #f4ecd8;
+ color: #5b4636;
+ }
+ body.sepia-mode .audio-player,
+ body.sepia-mode .card {
+ background: #fff8e1;
+ color: #4b3b2a;
+ box-shadow: 0 0 10px rgba(100, 60, 30, 0.2);
+ }
+ body.sepia-mode #map,
+ body.sepia-mode iframe {
+ border-color: #a47551;
+ }
+ body.sepia-mode #themeToggle {
+ background: #e0d2b3;
+ color: #5b4636;
+ }
+ </style>
+</head>
+<body>
+ <!-- THEME TOGGLE DROPDOWN -->
+ <select id="themeToggle" onchange="toggleTheme()">
+ <option value="dark" selected>🌙 Dark</option>
+ <option value="light">☀️ Light</option>
+ <option value="sepia">📜 Sepia</option>
+ </select>
+
+ <div class="container">
+ <!-- 1. Typing Animation -->
+ <div class="typing-container">
+ <div class="typing-text">The Enduring Alupa Dynasty</div>
+ <div class="typing-subtext">A Legacy of Tulu Nadu and Coastal Karnataka</div>
+ </div>
+
+ <!-- 2. Audio Narration -->
+ <div class="audio-player">
+ <button onclick="playLegacyNarration()">🎙️ Play Alupa Dynasty Legacy Narration</button>
+ <button onclick="pauseLegacyNarration()">⏸️ Pause Narration</button>
+ <button onclick="stopLegacyNarration()">🛑 Stop Narration</button>
+ </div>
+
+ <!-- 3. Map -->
+ <h2 class="map-heading">🛕 Famous Sites of the Alupa Dynasty 🛕</h2>
+ <div id="map"></div>
+
+ <!-- 4. Rulers Slider -->
+ <div class="slider-container">
+ <div class="slider" id="slider">
+ <div class="card">
+ <img src="aluvarasa-i.jpg" alt="Aluvarasa I" onclick="playKingAudio(0)">
+ <h3>Aluvarasa I (650–663 CE)</h3>
+ <p>First documented Alupa king, ruled Mangalapura.</p>
+ </div>
+ <div class="card">
+ <img src="chitravahana-i.jpg" alt="Chitravahana I" onclick="playKingAudio(1)">
+ <h3>Chitravahana I (7th Century)</h3>
+ <p>Strengthened Alupa rule, resisted Pandya invasions.</p>
+ </div>
+ <div class="card">
+ <img src="kunda-alupa.jpg" alt="Kunda Alupa" onclick="playKingAudio(2)">
+ <h3>Kunda Alupa (11th Century)</h3>
+ <p>Noted in Ramanthali inscription, patron of Tulu culture.</p>
+ </div>
+ <div class="card">
+ <img src="kulashekara-alupendra-i.jpg" alt="Kulashekara Alupendra I" onclick="playKingAudio(3)">
+ <h3>Kulashekara Alupendra I (1156–1215 CE)</h3>
+ <p>Founded Kulashekara city, built Someshwara Temple.</p>
+ </div>
+ </div>
+ <div class="slider-controls">
+ <button onclick="prevSlide()">Previous</button>
+ <button onclick="nextSlide()">Next</button>
+ </div>
+ </div>
+
+ <!-- 5. 360° View -->
+ <h2 class="view-heading">🌏 360° View: Mahalingeshwara Temple, Basrur</h2>
+ <div class="street-view">
+ <iframe src="https://www.google.com/maps/embed?pb=!4v1753076517347!6m8!1m7!1sCAoSFkNJSE0wb2dLRUlDQWdJRDQ3YnlkTkE.!2m2!1d13.63292270473081!2d74.73406517687243!3f338.8472384266842!4f-2.564759770884592!5f0.4000000000000002"
+  width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+ </div>
+ </div>
+
+ <!-- JS -->
+ <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+ <script>
+ // Map setup
+ const map = L.map('map').setView([13.3, 74.8], 8);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+ attribution: 'Map data © OpenStreetMap contributors'
+ }).addTo(map);
+
+ const sites = [
+ { name: "Anantheshwara Temple, Udupi", coords: [13.3409, 74.7451], img: "anantheshwara-temple.jpg" },
+ { name: "Panchalingeshwara Temple, Barkur", coords: [13.4670, 74.7500], img: "panchalingeshwara-temple.jpg" },
+ { name: "Someshwara Temple, Mangaluru", coords: [12.8490, 74.8460], img: "someshwara-temple.jpg" },
+ { name: "Koteshwara Temple, Kotinatha", coords: [13.6000, 74.7000], img: "koteshwara-temple.jpg" },
+ { name: "Sadashiva Temple, Suratkal", coords: [13.0100, 74.7900], img: "sadashiva-temple.jpg" },
+ { name: "Brahmalingeshwara Temple, Brahmavar", coords: [13.4300, 74.7400], img: "brahmalingeshwara-temple.jpg" },
+ { name: "Mudabidri Jain Basadi, Moodbidri", coords: [13.0667, 74.9833], img: "mudabidri-jain-basadi.jpg" },
+ { name: "Vaddarse Inscription Site, Udupi", coords: [13.3500, 74.7500], img: "vaddarse-inscription.jpg" },
+ { name: "Belmannu Copper Plate Site, Karkala", coords: [13.1600, 74.8600], img: "belmannu-copper-plate.jpg" },
+ { name: "Mahalingeshwara Temple, Basrur", coords: [13.6300, 74.7300], img: "mahalingeshwara-temple.jpg" }
+ ];
+
+ sites.forEach(site => {
+ const popup = `
+ <div style="text-align:center;">
+ <h3>${site.name}</h3>
+ <img src="${site.img}" alt="${site.name}" style="width:200px;border-radius:10px;box-shadow:0 0 6px #000;">
+ </div>`;
+ L.marker(site.coords).addTo(map).bindPopup(popup);
+ });
+
+ // Audio Narration
+ const legacyAudio = new Audio('alupa-dynasty-legacy.mp3');
+ function playLegacyNarration() {
+ legacyAudio.play();
+ }
+ function pauseLegacyNarration() {
+ legacyAudio.pause();
+ }
+ function stopLegacyNarration() {
+ legacyAudio.pause();
+ legacyAudio.currentTime = 0;
+ }
+
+ // Ruler Audio Files
+ const kingAudios = [
+ new Audio('aluvarasa-i.mp3'),
+ new Audio('chitravahana-i.mp3'),
+ new Audio('kunda-alupa.mp3'),
+ new Audio('kulashekara-alupendra-i.mp3')
+ ];
+
+ function playKingAudio(index) {
+ kingAudios.forEach(audio => {
+ audio.pause();
+ audio.currentTime = 0;
+ });
+ kingAudios[index].play();
+ }
+
+ // Slider Controls
+ let currentIndex = 0;
+ function updateSlider() {
+ document.getElementById('slider').style.transform = `translateX(-${currentIndex * 100}%)`;
+ }
+ function prevSlide() {
+ if (currentIndex > 0) currentIndex--;
+ updateSlider();
+ }
+ function nextSlide() {
+ const slider = document.getElementById('slider');
+ if (currentIndex < slider.children.length - 1) currentIndex++;
+ updateSlider();
+ }
+
+ // 🌗 Theme Switcher
+ function toggleTheme() {
+ const theme = document.getElementById('themeToggle').value;
+ document.body.className = ''; // clear
+ if (theme === 'light') document.body.classList.add('light-mode');
+ else if (theme === 'sepia') document.body.classList.add('sepia-mode');
+ }
+ </script>
+</body>
+</html>

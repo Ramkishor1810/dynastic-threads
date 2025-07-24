@@ -1,0 +1,414 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Delhi Sultanate Legacy</title>
+ <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+ <style>
+ body {
+ font-family: 'Cinzel', serif;
+ background: linear-gradient(to bottom, #1a1a1a, #4b2e2e);
+ color: #f0e68c;
+ margin: 0;
+ padding: 0;
+ overflow-x: hidden;
+ }
+ .container {
+ max-width: 1200px;
+ margin: 0 auto;
+ padding: 20px;
+ }
+ 
+ #themeToggle {
+ position: fixed;
+ top: 20px;
+ right: 30px;
+ z-index: 1000;
+ font-family: 'Cinzel', serif;
+ padding: 6px 12px;
+ border-radius: 8px;
+ font-size: 1em;
+ background: #2e2e2e;
+ color: #f0e68c;
+ border: none;
+ }
+
+ .typing-container {
+ text-align: center;
+ margin: 50px 0;
+ }
+ .typing-text {
+ font-size: 3em;
+ font-weight: bold;
+ border-right: 4px solid #f0e68c;
+ white-space: nowrap;
+ overflow: hidden;
+ width: 0;
+ animation: typing 4s steps(30, end) forwards, blink 0.5s step-end infinite;
+ }
+ .typing-subtext {
+ font-size: 1.5em;
+ margin-top: 20px;
+ white-space: nowrap;
+ overflow: hidden;
+ width: 0;
+ animation: typingSub 6s steps(60, end) forwards 4s, blink 0.5s step-end infinite;
+ }
+ @keyframes typing {
+ from { width: 0; }
+ to { width: 100%; }
+ }
+ @keyframes typingSub {
+ from { width: 0; }
+ to { width: 100%; }
+ }
+ @keyframes blink {
+ 50% { border-color: transparent; }
+ }
+
+ .audio-player {
+ text-align: center;
+ margin: 30px 0;
+ background: #2e2e2e;
+ padding: 20px;
+ border-radius: 10px;
+ box-shadow: 0 0 10px rgba(0,0,0,0.5);
+ }
+ .audio-player button {
+ background: #b8860b;
+ color: #fff;
+ border: none;
+ padding: 10px 20px;
+ margin: 10px;
+ border-radius: 5px;
+ cursor: pointer;
+ font-family: 'Cinzel', serif;
+ }
+ .audio-player button:hover {
+ background: #d4a017;
+ }
+
+ h2.map-heading, h2.view-heading {
+ text-align: center;
+ font-family: 'Cinzel', serif;
+ color: #f0e68c;
+ font-size: 2em;
+ margin-top: 40px;
+ }
+
+ #map {
+ height: 500px;
+ width: 100%;
+ margin: 30px 0;
+ border: 2px solid #f0e68c;
+ border-radius: 10px;
+ }
+
+ .slider-container {
+ position: relative;
+ width: 100%;
+ height: 600px;
+ overflow: hidden;
+ margin: 50px 0;
+ }
+ .slider {
+ display: flex;
+ transition: transform 0.5s ease-in-out;
+ }
+ .card {
+ min-width: 100%;
+ text-align: center;
+ padding: 20px;
+ background: #2e2e2e;
+ border-radius: 10px;
+ box-shadow: 0 0 10px rgba(0,0,0,0.5);
+ }
+ .card img {
+ width: 300px;
+ height: 300px;
+ object-fit: cover;
+ border-radius: 10px;
+ transition: transform 0.8s;
+ }
+ .card img:hover {
+ transform: rotateY(180deg);
+ }
+ .card h3 {
+ font-size: 2em;
+ margin: 10px 0;
+ }
+ .card p {
+ font-size: 1.2em;
+ }
+ .slider-controls {
+ text-align: center;
+ margin-top: 20px;
+ }
+ .slider-controls button {
+ background: #b8860b;
+ color: #fff;
+ border: none;
+ padding: 10px 20px;
+ margin: 0 10px;
+ border-radius: 5px;
+ cursor: pointer;
+ font-family: 'Cinzel', serif;
+ }
+ .slider-controls button:hover {
+ background: #d4a017;
+ }
+
+ .street-view {
+ display: flex;
+ justify-content: center;
+ margin: 40px 0;
+ }
+ .street-view iframe {
+ width: 100%;
+ max-width: 1000px;
+ height: 500px;
+ border: 3px solid #f0e68c;
+ border-radius: 10px;
+ box-shadow: 0 0 10px rgba(0,0,0,0.6);
+ }
+
+ /* 🌞 LIGHT MODE */
+ body.light-mode {
+ background: #f9f9f9;
+ color: #1a1a1a;
+ }
+ body.light-mode .audio-player,
+ body.light-mode .card {
+ background: #ffffff;
+ color: #000;
+ }
+ body.light-mode #map,
+ body.light-mode iframe {
+ border-color: #000;
+ }
+ body.light-mode #themeToggle {
+ background: #ddd;
+ color: #000;
+ }
+
+ /* 📜 SEPIA MODE */
+ body.sepia-mode {
+ background: #f4ecd8;
+ color: #5b4636;
+ }
+ body.sepia-mode .audio-player,
+ body.sepia-mode .card {
+ background: #fff8e1;
+ color: #4b3b2a;
+ box-shadow: 0 0 10px rgba(100, 60, 30, 0.2);
+ }
+ body.sepia-mode #map,
+ body.sepia-mode iframe {
+ border-color: #a47551;
+ }
+ body.sepia-mode #themeToggle {
+ background: #e0d2b3;
+ color: #5b4636;
+ }
+ </style>
+</head>
+<body>
+ <!-- THEME TOGGLE DROPDOWN -->
+ <select id="themeToggle" onchange="toggleTheme()">
+ <option value="dark" selected>🌙 Dark</option>
+ <option value="light">☀️ Light</option>
+ <option value="sepia">📜 Sepia</option>
+ </select>
+
+ <div class="container">
+ <!-- 1. Typing Animation -->
+ <div class="typing-container">
+ <div class="typing-text">The Mighty Delhi Sultanate</div>
+ <div class="typing-subtext">A Legacy of Indo-Islamic Architecture and Power in India</div>
+ </div>
+
+ <!-- 2. Audio Narration -->
+ <div class="audio-player">
+ <button onclick="playLegacyNarration()">🎙️ Play Delhi Sultanate Legacy Narration</button>
+ <button onclick="pauseLegacyNarration()">⏸️ Pause Narration</button>
+ <button onclick="stopLegacyNarration()">🛑 Stop Narration</button>
+ </div>
+
+ <!-- 3. Map -->
+ <h2 class="map-heading">🏰 Famous Sites of the Delhi Sultanate 🏰</h2>
+ <div id="map"></div>
+
+ <!-- 4. Rulers Slider -->
+ <div class="slider-container">
+ <div class="slider" id="slider">
+ <div class="card">
+ <img src="qutbuddin-aibak.jpg" alt="Qutbuddin Aibak" onclick="playKingAudio(0)">
+ <h3>Qutbuddin Aibak (1206–1210 CE)</h3>
+ <p>Founder of the Mamluk Dynasty, built Qutub Minar.</p>
+ </div>
+ <div class="card">
+ <img src="iltutmish.jpeg" alt="Iltutmish" onclick="playKingAudio(1)">
+ <h3>Iltutmish (1211–1236 CE)</h3>
+ <p>Consolidated the Sultanate, completed Qutub Minar.</p>
+ </div>
+ <div class="card">
+ <img src="alauddin-khalji.jpeg" alt="Alauddin Khalji" onclick="playKingAudio(2)">
+ <h3>Alauddin Khalji (1296–1316 CE)</h3>
+ <p>Expanded the empire, built Alai Darwaza and Siri Fort.</p>
+ </div>
+ <div class="card">
+ <img src="muhammad-bin-tughlaq.jpg" alt="Muhammad bin Tughlaq" onclick="playKingAudio(3)">
+ <h3>Muhammad bin Tughlaq (1325–1351 CE)</h3>
+ <p>Known for ambitious reforms, shifted capital to Daulatabad.</p>
+ </div>
+ <div class="card">
+ <img src="firuz-shah-tughlaq.jpeg" alt="Firuz Shah Tughlaq" onclick="playKingAudio(4)">
+ <h3>Firuz Shah Tughlaq (1351–1388 CE)</h3>
+ <p>Built Firoz Shah Kotla, promoted irrigation and architecture.</p>
+ </div>
+ </div>
+ <div class="slider-controls">
+ <button onclick="prevSlide()">Previous</button>
+ <button onclick="nextSlide()">Next</button>
+ </div>
+ </div>
+
+ <!-- 5. 360° View -->
+ <h2 class="view-heading">🌏 360° View: Qutub Minar, Delhi</h2>
+ <div class="street-view">
+ <iframe
+ src="https://www.google.com/maps/embed?pb=!4v1730139123456!6m8!1m7!1sCAoSLEFGMVFpcE5fU0p3Z1R4Q2dZc0Z3R1J0U0dUc0ZfN1J0a1h3!2m2!1d28.5245!2d77.1853!3f0!4f0!5f0.7820865974627469"
+ allowfullscreen
+ loading="lazy"
+ referrerpolicy="no-referrer-when-downgrade">
+ </iframe>
+ </div>
+ </div>
+
+ <!-- JS -->
+ <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+ <script>
+ // Map setup
+ const map = L.map('map').setView([28.6, 77.2], 6);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+ attribution: 'Map data © OpenStreetMap contributors'
+ }).addTo(map);
+
+ const sites = [
+ { name: "Qutub Minar, Delhi", coords: [28.5245, 77.1853], img: "qutub-minar.jpg" },
+ { name: "Alai Darwaza, Delhi", coords: [28.5250, 77.1855], img: "alai-darwaza.jpg" },
+ { name: "Firoz Shah Kotla, Delhi", coords: [28.6353, 77.2450], img: "firoz-shah-kotla.jpg" },
+ { name: "Tughlaqabad Fort, Delhi", coords: [28.5110, 77.2630], img: "tughlaqabad-fort.jpg" },
+ { name: "Hauz Khas Complex, Delhi", coords: [28.5535, 77.1925], img: "hauz-khas.jpg" },
+ { name: "Jama Masjid, Delhi", coords: [28.6507, 77.2334], img: "jama-masjid-delhi.jpg" },
+ { name: "Siri Fort, Delhi", coords: [28.5530, 77.2130], img: "siri-fort.jpg" },
+ { name: "Daulatabad Fort, Maharashtra", coords: [19.9437, 75.2132], img: "daulatabad-fort.jpg" },
+ { name: "Lodi Gardens, Delhi", coords: [28.5933, 77.2200], img: "lodi-gardens.jpg" },
+ { name: "Balban’s Tomb, Delhi", coords: [28.5255, 77.1860], img: "balban-tomb.jpg" }
+ ];
+
+ sites.forEach(site => {
+ const popup = `
+ <div style="text-align:center;">
+ <h3>${site.name}</h3>
+ <img src="${site.img}" alt="${site.name}" style="width:200px;border-radius:10px;box-shadow:0 0 6px #000;">
+ </div>`;
+ L.marker(site.coords).addTo(map).bindPopup(popup);
+ });
+
+ // Audio Narration
+ const legacyAudio = new Audio('delhi-sultanate-legacy.mp3');
+ function playLegacyNarration() {
+ legacyAudio.play();
+ }
+ function pauseLegacyNarration() {
+ legacyAudio.pause();
+ }
+ function stopLegacyNarration() {
+ legacyAudio.pause();
+ legacyAudio.currentTime = 0;
+ }
+
+ // Ruler Audio Files
+ const kingAudios = [
+ new Audio('qutbuddin-aibak.mp3'),
+ new Audio('iltutmish.mp3'),
+ new Audio('alauddin-khalji.mp3'),
+ new Audio('muhammad-bin-tughlaq.mp3'),
+ new Audio('firuz-shah-tughlaq.mp3')
+ ];
+
+ function playKingAudio(index) {
+ kingAudios.forEach(audio => {
+ audio.pause();
+ audio.currentTime = 0;
+ });
+ kingAudios[index].play();
+ }
+
+ // Slider Controls
+ let currentIndex = 0;
+ function updateSlider() {
+ document.getElementById('slider').style.transform = `translateX(-${currentIndex * 100}%)`;
+ }
+ function prevSlide() {
+ if (currentIndex > 0) currentIndex--;
+ updateSlider();
+ }
+ function nextSlide() {
+ const slider = document.getElementById('slider');
+ if (currentIndex < slider.children.length - 1) currentIndex++;
+ updateSlider();
+ }
+
+ // 🌗 Theme Switcher
+ function toggleTheme() {
+ const theme = document.getElementById('themeToggle').value;
+ document.body.className = ''; // clear
+ if (theme === 'light') document.body.classList.add('light-mode');
+ else if (theme === 'sepia') document.body.classList.add('sepia-mode');
+ }
+ </script>
+</body>
+</html>
